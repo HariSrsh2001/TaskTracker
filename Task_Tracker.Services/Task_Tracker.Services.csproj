@@ -1,0 +1,14 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Task_Tracker.DAL\Task_Tracker.DAL.csproj" />
+    <ProjectReference Include="..\Task_Tracker.Domain\Task_Tracker.Domain.csproj" />
+  </ItemGroup>
+
+</Project>
