@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "@microsoft/signalr": "^9.0.6",
+    "axios": "^1.11.0"
+  }
+}

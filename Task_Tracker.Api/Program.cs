@@ -8,25 +8,18 @@ using Task_Tracker.Services.Interfaces;
 
 var builder = WebApplication.CreateBuilder(args);
 
-var configuration = builder.Configuration;
+const string ReactDevCorsPolicy = "ReactDevPolicy";
 
-// DbContext
-builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlServer(configuration.GetConnectionString("DefaultConnection")));
-
-// Register repository and services
-builder.Services.AddScoped<IRepository<Task_Tracker.Domain.Models.TaskItem>, TaskRepository>();
-builder.Services.AddScoped<ITaskService, TaskService>();
-
+// Add services to the container
 builder.Services.AddControllers();
 builder.Services.AddSignalR();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// CORS policy for React frontend on localhost:3000
+// Add CORS policy for React frontend running on localhost:3000
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowReactClient", policy =>
+    options.AddPolicy(name: ReactDevCorsPolicy, policy =>
     {
         policy.WithOrigins("http://localhost:3000")
               .AllowAnyHeader()
@@ -35,15 +28,17 @@ builder.Services.AddCors(options =>
     });
 });
 
+// Configure EF Core with SQL Server connection string from appsettings.json
+builder.Services.AddDbContext<AppDbContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+// Register repositories and services
+builder.Services.AddScoped<IRepository<Task_Tracker.Domain.Models.TaskItem>, TaskRepository>();
+builder.Services.AddScoped<ITaskService, TaskService>();
+
 var app = builder.Build();
 
-// Migrate database automatically
-using (var scope = app.Services.CreateScope())
-{
-    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    db.Database.Migrate();
-}
-
+// Enable Swagger in development environment
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -52,11 +47,12 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-app.UseCors("AllowReactClient");
+// Use CORS with the defined policy - important to put before authorization and endpoints
+app.UseCors(ReactDevCorsPolicy);
 
 app.UseAuthorization();
 
 app.MapControllers();
-app.MapHub<TasksHub>("/hubs/tasks");
+app.MapHub<TasksHub>("/taskhub");
 
 app.Run();
