@@ -33,7 +33,10 @@ namespace Task_Tracker.Api.Controllers
         public async Task<IActionResult> Post(TaskItem task)
         {
             var created = await _taskService.CreateTaskAsync(task);
+
+            // Notify clients a new task was created
             await _hubContext.Clients.All.SendAsync("TaskCreated", created);
+
             return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
         }
 
@@ -45,14 +48,13 @@ namespace Task_Tracker.Api.Controllers
             return Ok(task);
         }
 
-        // FULL update (merges instead of overwriting)
+        // FULL update (merge updated fields)
         [HttpPut("{id}")]
         public async Task<IActionResult> Put(Guid id, TaskItem updatedTask)
         {
             var existingTask = await _taskService.GetTaskByIdAsync(id);
             if (existingTask == null) return NotFound();
 
-            // Merge fields
             existingTask.Title = updatedTask.Title ?? existingTask.Title;
             existingTask.Description = updatedTask.Description ?? existingTask.Description;
             existingTask.AssignedTo = updatedTask.AssignedTo ?? existingTask.AssignedTo;
@@ -61,11 +63,13 @@ namespace Task_Tracker.Api.Controllers
 
             var updated = await _taskService.UpdateTaskAsync(id, existingTask);
 
+            // Notify clients task was updated
             await _hubContext.Clients.All.SendAsync("TaskUpdated", updated);
+
             return Ok(updated);
         }
 
-        // PATCH for only status
+        // PATCH only status update
         [HttpPatch("{id}/status")]
         public async Task<IActionResult> UpdateStatus(Guid id, [FromBody] DomainTaskStatus status)
         {
@@ -77,16 +81,45 @@ namespace Task_Tracker.Api.Controllers
 
             var updated = await _taskService.UpdateTaskAsync(id, existingTask);
 
+            // Notify clients task was updated
             await _hubContext.Clients.All.SendAsync("TaskUpdated", updated);
+
             return Ok(updated);
         }
 
+
+
+        //[HttpDelete("{id}")]
+        //public async Task<IActionResult> DeleteTask(Guid id)
+        //{
+        //    var task = await _taskService.GetTaskByIdAsync(id);
+        //    if (task == null)
+        //        return NotFound();
+
+        //    await _taskService.DeleteTaskAsync(id);
+
+        //    // Notify all connected clients that a task was deleted
+        //    await _hubContext.Clients.All.SendAsync("TaskDeleted", id);
+
+        //    return NoContent();
+        //}
+
         [HttpDelete("{id}")]
-        public async Task<IActionResult> Delete(Guid id)
+        public async Task<IActionResult> DeleteTask(Guid id)
         {
             var deleted = await _taskService.DeleteTaskAsync(id);
-            if (!deleted) return NotFound();
+            if (!deleted)
+                return NotFound();
+
+            // Notify all connected clients instantly
+            await _hubContext.Clients.All.SendAsync("TaskDeleted", id);
+
             return NoContent();
         }
+
+
+
+
+
     }
 }

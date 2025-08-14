@@ -53,6 +53,7 @@ app.UseCors(ReactDevCorsPolicy);
 app.UseAuthorization();
 
 app.MapControllers();
-app.MapHub<TasksHub>("/taskhub");
+app.MapHub<TasksHub>("/taskhub"); // <-- Change to match React client
+
 
 app.Run();
